@@ -1,0 +1,16 @@
+{
+  "name": "proger/hypersafe",
+  "description": "Highly customizable deep HTML filter that lets you avoid potentially unsafe/unwanted markup and even sanitize individual attributes like CSS 'style'..",
+  "keywords": ["HTML", "sanitizer", "normalization", "security", "XSS"],
+  "homepage": "https://github.com/ProgerXP/HyperSafe",
+  "license": "SAX-PD",
+  "authors": [{
+    "name": "Proger",
+    "email": "proger.xp@gmail.com",
+    "homepage": "http://proger.me"
+  }],
+  "autoload": {
+    "classmap": ["."]
+  },
+  "minimum-stability": "dev"
+}

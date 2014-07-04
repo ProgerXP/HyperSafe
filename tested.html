@@ -1,0 +1,70 @@
+  &lt;/ol&gt;
+  <h2>Заголовок &mdash; Title</h2>
+  <!-- Кодировка → UTF-8 -->
+
+  <header data-any="data:title/%$#">
+    &lt;a href="data:text/html,&lt;img src=x onerror=alert(0)&gt;"&gt;
+      Danger!
+    &lt;/a&gt;
+
+    &lt;img alt="Doesn't make sense without &quot;src&#x22;"&gt;
+    <a href="#"><a href="#" target="_blank">Okay.</a></a>
+
+    <p>
+      Some <em>&lt;b&gt;broken</em> nesting&lt;/b&gt; &amp; keeping &lt;p&gt;↓
+    </p>
+  </header>
+
+  <p>Co<u>mm&lt;!&lt;/p&gt;--&gt;en</u>t.</p>
+  --
+  &lt;meta/&gt;XML&lt;/meta&gt;-&lt;script/&gt;way&lt;/script&gt;
+
+  <p><abbr title="foo!">is deprecated, now <abbr>rules</abbr></abbr>.</p>
+  <p><abbr>Even if it's aliased &ndash; nesting must be &lt;abbr&gt;kept</abbr>&lt;/abbr&gt;!</p>
+
+  <h1 style="background: url('javascript:foo;')">for IE 6</h1>
+
+  <p><strong>What? &lt;/img src="/"&gt;</strong></p>
+  <p>Proper single <wbr title="5"> tag and nesting.</p> <wbr title="5">
+  <span title="">Empty</span> <ins title=''>title</ins> <del title="">.</del>
+  <aside>Here <input data-foo=""> <input data-foo="data-foo"> too.</aside>
+
+  <div style="margin: &quot; &quot; &quot; &quot; ' ' ' '; border: up" data-onmousemove="alert('Ouch &apos; + document.cookie + &#39;!')">
+    Browser decodes entities inside attributes.
+    <p>Style discarded.</p>
+    <p>Too.</p>
+    &lt;a style="margin: &#x27;; "&gt;Tag discarded.&lt;/a&gt;
+
+    <!-- multi
+      &lt;/div&gt;
+    line -->
+  </div>
+
+  <p>&lt; b&gt;ad&lt;b&gt;ad&lt;/ b&gt;&middot;&lt;i&gt;ad&lt; /i&gt; <mark>&bull;</mark> &lt;u/style&gt;ad&lt;/u&gt;•&lt;s&gt;ad&lt;/s data-x&gt;</p>
+
+  <input data-custom="data-custom" readonly="readonly" disabled="disabled" placeholder="foo">
+
+  <ul type="&amp;quot;" id='what'>
+    <li>Too <em>broken&lt;/i'&gt;</em>.</li>
+    <li>
+          <kbd data-foo="b&quot;a'r">duh</kbd>
+        </li>
+    <li value="value='value=&quot;" style="icon: url('; cursor: url(&quot;;
+               background: data:image/png,foo'); font: &quot;foo&quot;, bar">
+      <strong>Unnest <wbr>me&lt;/wbr&gt;!</strong>
+    </li>
+  </ul>
+
+  <article>
+    <div><p>N3STiNG.</p></div>
+    &lt;p&gt;o_O →&lt;/p/&gt;
+    <img src="https://localhost"> <em>&lt;/Img&gt;?</em>
+    &lt;LoL&gt;<strong style="font-size: 18pX">ar</strong>&lt;/LoL&gt;
+  </article>
+
+  <!--
+    &lt;b&gt;Unterminated
+    comment&lt;/b&gt;
+    &lt;meta&gt;
+
+-->

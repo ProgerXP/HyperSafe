@@ -76,15 +76,18 @@
 
 <?php
   $input = ob_get_clean();
-  $expected = trim(file_get_contents(__DIR__.'/tested.html'));
+  $customInput = isset($_REQUEST['input']);
+  $customInput and $input = trim($_REQUEST['input']);
+  $expected = $customInput ? $input : trim(file_get_contents(__DIR__.'/tested.html'));
 
   ini_set('display_errors', 'on');
   error_reporting(-1);
 
   require_once __DIR__.'/hypersafe.php';
   $hs = new HyperSafe;
-  $hs->lineBreaks = "\n";
+  $hs->lineBreaks = $customInput ? null : "\n";
   $hs->keepComments = true;
+  $ac = &$_REQUEST['autoclose'] and $hs->autoClose = $ac === '1' ? true : $ac;
   $output = trim($hs->clean($input));
 
   function esc($str) {
@@ -96,7 +99,10 @@
   }
 
   header('Content-Type: text/html; charset=utf-8');
-  $expected === $output or print '<h3 style="color: red">Wrong output</h3>';
+
+  if ($expected !== $output) {
+    echo '<h3 style="color: red">Output differs</h3>';
+  }
 ?>
 
 <div style="overflow: auto">
@@ -107,7 +113,25 @@
     ><?php echo esc($output)?></textarea>
 </div>
 
-<center>(expected &nbsp; | &nbsp; produced)</center>
+<center>
+  ↑ expected
+  [ <a href="#" onclick="document.getElementById('_hsinput_').style.display = 'block'; return false">clean yours</a> ]
+  produced ↑
+</center>
+
+<form action="" method="post" style="display: none" id="_hsinput_">
+  <p>
+    <textarea style="width: 100%; height: 35em" name="input"
+              onfocus="this.select(); this.onfocus = null"
+      ><?php echo esc($input)?></textarea>
+  </p>
+  <p style="text-align: center">
+    <label><input type="radio" name="autoclose" value="" checked> don't autoclose tags</label>
+    <label><input type="radio" name="autoclose" value="eof"> autoclose on EOF</label>
+    <label><input type="radio" name="autoclose" value="1"> autoclose all tags</label>
+  </p>
+  <p style="text-align: center"><input type="submit"></p>
+</form>
 
 <h3>Warnings</h3>
 <ol>

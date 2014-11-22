@@ -134,7 +134,7 @@ class HyperSafe {
 
     Value = array with string members like:
 
-       [!]ATTR[ CHECKER]
+       [![![!...]]]ATTR[ CHECKER]
 
     If value is a string then it's an alias of another tag (output tag is changed);
     that other tag can be also an alias, etc. Empty array simply allows the tag
@@ -144,6 +144,9 @@ class HyperSafe {
     Legend:
     * ! - optional, if present means that this attribute is required and if
       not present in the tag renders the tag invalid (such tags are quoted)
+    * !!... - multiple '!'s (more than one) indicate that at least one attribute
+      with the same number of '!'s must be present; e.g. for <a> it can be either
+      'href' or 'name' (old style of <a name="anchoring"></a>)
     * ATTR - name of the attribute, may contain '*' (e.g. 'data-*')
     * CHECKER - if present refers to $this->checks item used to sanitize
       this attribute's value; if omitted the value is not checked which might
@@ -154,8 +157,8 @@ class HyperSafe {
     // As an optimization, '' key must be always defined (even if as array()) and
     // must not contain !required attributes (they are ignored).
     ''            => array('class', 'dir', 'id', 'lang lang2', 'style css', 'title', 'data-*'),
-    'a'           => array('download filename', '!href url', 'hreflang lang2', 'rel',
-                           'target filename', 'target filename', 'type mime'),
+    'a'           => array('download filename', '!!href url', 'hreflang lang2', 'rel',
+                           '!!name filename', 'target filename', 'type mime'),
     'abbr'        => array(),
     'acronym'     => 'abbr',
     'address'     => array(),
@@ -262,6 +265,14 @@ class HyperSafe {
   // Output HTML string transformed at each stage. Returned by clean().
   public $output;
 
+  // By default HyperSafe will leave all unclosed tags in escaped form. Values:
+  // * false - default behaviour
+  // * 'eof' - close tags that were left open when input stream has ended
+  // * true  - as 'eof' and also close improperly nested tags (<a><b></a></b>
+  //   becomes  <a><b></b></a>&lt;/b&gt;  while by default it would become
+  //   <a>&lt;b&gt;</a>&lt;/b&gt;
+  public $autoClose = false;
+
   // array('msg', opening = $stackItem/null, closing = $token/null, $tokenIndex).
   // Not cleared between clean() calls on the same object (accumulated).
   //
@@ -332,6 +343,11 @@ class HyperSafe {
       $this->warnings[] = array($msg, $stack, $token, $this->index);
     }
     // Must return null - used as return $this->warn('error');
+  }
+
+  function clearWarnings() {
+    $this->warnings = array();
+    return $this;
   }
 
   // Returns more stable and public version of $this->warnings.
@@ -458,12 +474,29 @@ class HyperSafe {
           if ($this->stack) {
             --$index;  // found matching opening tag - repeat the iteration.
             $this->badNesting($removed);
+
+            if ($this->autoClose === true) {
+              $this->autoCloseAt($stackItem[1][0][1], $removed);
+            }
           } else {
             $this->stack = $removed;  // restore stack.
             $this->badNesting();
           }
         }
       }
+    }
+
+    if ($this->autoClose !== false) {
+      $this->autoCloseAt(strlen($this->output) - $this->shift, $this->stack);
+    }
+  }
+
+  protected function autoCloseAt($pos, array $openers) {
+    foreach ($openers as $openerStack) {
+      $tag = $openerStack[0];
+      $pseudoToken = array(array('', $pos), array('/'), array($tag), array());
+      $pseudoStack = array($tag, $pseudoToken, $this->shift);
+      $this->processMatching($openerStack, $pseudoStack);
     }
   }
 
@@ -499,14 +532,27 @@ class HyperSafe {
       return "</$tag>";
     } else {
       $attrs = $this->parseAttributes($rules, $attributes[0]);
+      $reqGroups = array();
 
       foreach ($rules as $rule) {
         if ($rule[0] === '!') {
           $rule = $this->parseRule($rule);
-          if (!isset($attrs[ $rule['name'] ])) {
+
+          if ($group = $rule['reqAnyInGroup']) {
+            $grouped = &$reqGroups[$group];
+            if (isset($attrs[ $rule['name'] ])) {
+              $grouped = true;
+            } elseif ($grouped !== true) {
+              $reqGroups[$group][] = $rule;
+            }
+          } elseif (!isset($attrs[ $rule['name'] ])) {
             return $this->missingRequired($rule);
           }
         }
+      }
+
+      foreach ($reqGroups as $rules) {
+        if ($rules !== true) { return $this->missingAnyRequired($rules); }
       }
 
       foreach ($attrs as $attr => $value) { $tag .= " $attr=$value"; }
@@ -624,10 +670,14 @@ class HyperSafe {
   }
 
   protected function parseRule($rule) {
+    $group = strspn($rule, '!');
     return array(
-      'name'      => ltrim(strtok($rule, ' '), '!'),
-      'checker'   => trim(strtok(null)),
-      'required'  => $rule[0] === '!',
+      'name'          => ltrim(strtok($rule, ' '), '!'),
+      'checker'       => trim(strtok(null)),
+      'required'      => $group > 0,
+      // false = this attribute must be required regardless of any others.
+      // integer > 0 = must be required only if no others within the same group exist.
+      'reqAnyInGroup' => $group > 1 ? $group : false,
     );
   }
 
@@ -658,16 +708,16 @@ class HyperSafe {
     return $value;
   }
 
-  protected function replace(array $stackItem, $str) {
+  protected function replace(array $stackItem, $str, $length = null) {
     // $stackItem[1][0] = array('&lt;full&gt;', pos).
     // $stackItem[2] = shift.
     $pos = $stackItem[1][0][1] + $stackItem[2];
-    $origLen = strlen($stackItem[1][0][0]);
+    $length === null and $length = strlen($stackItem[1][0][0]);
 
     $this->output = substr($this->output, 0, $pos).
                     $str.
-                    substr($this->output, $pos + $origLen);
-    return strlen($str) - $origLen;
+                    substr($this->output, $pos + $length);
+    return strlen($str) - $length;
   }
 
   // $str = 'background-image: url("foo"); clear: both'.
@@ -745,6 +795,16 @@ class HyperSafe {
   // $rule = result of calling parseRule().
   protected function missingRequired(array $rule) {
     $this->warn("missing required attribute \"$rule[name]\" - tag discarded");
+  }
+
+  // Called if a tag has missing any of !!attributes (mandatory group of which
+  // at least one attribute must be present).
+  // $rules = array of rules, i.e. results of calling parseRule().
+  protected function missingAnyRequired(array $rules) {
+    $names = array();
+    foreach ($rules as $rule) { $names[] = "\"$rule[name]\""; }
+    $names = join(', ', $names);
+    $this->warn("missing any of required attributes $names - tag discarded");
   }
 
   // Called if an attribute value or CSS style didn't pass a check(s) defined

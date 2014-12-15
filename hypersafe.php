@@ -120,7 +120,7 @@ class HyperSafe {
     'filename'    => '[\w\- .]+$',
     'lang2'       => '\w\w$',
     'mime'        => '[\w-]+/[\w-]+$',
-    'datetime'    => '\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d\w*$',
+    'datetime'    => '\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d[+\w:]*$',
     'url'         => array('((https?|ftp)://|/[^\\\\/]|#)', '[^\\\\]+$'),
     'imgurl'      => array('((https?|ftp)://|/[^\\\\/]|data:image/\w+;base64,)', '[^\\\\]+$'),
     'map'         => '#[\w\- .]+$',
